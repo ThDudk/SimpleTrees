@@ -19,7 +19,7 @@ To install the project, first go and download the [latest release]().
 To generate a libs directory, open your terminal and cd to your project directory 
 > If you're using IntelliJ, you can use the built-in `View/Tool Windows/Terminal`. Just make sure the simple-trees jar is inside your project directory.
 
-From there, use the following command to create a local Maven repository: (replacing the version where necessary)
+From there, use the following command to create a project level Maven repository: (replacing the version where necessary)
 
 ```terminaloutput
 mvn install:install-file 
