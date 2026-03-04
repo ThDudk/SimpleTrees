@@ -12,7 +12,7 @@ I created this library because I was having trouble finding other libraries that
 
 ## Usage
 
-By default, trees are mutable. As a result, creating trees is fairly simple.
+By default, trees are mutable. You can create trees directly.
 
 ```java
 // represents x + y = z
