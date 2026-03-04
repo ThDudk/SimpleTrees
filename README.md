@@ -3,7 +3,7 @@
 ## Description
 Java tree library that supports java streams and Jackson Serialization, as well as some simple iterators.
 
-I created this library because I was having trouble finding other libraries that met my needs: mapping nodes and cleaning serializing to JSON with Jackson.
+I created this library because I was having trouble finding other libraries that met my needs: mapping nodes and cleanly serializing to JSON with Jackson.
 
 ## Compatibility
 
