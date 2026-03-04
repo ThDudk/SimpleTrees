@@ -162,4 +162,16 @@ String jsonString = mapper.writeValueAsString(expressionTree);
 Tree<MathSymbol> exprTree = mapper.readValue(new File("src/main/resources/myExpressionTree.json"), new TypeReference<>(){});
 ```
 
-> for more information on jackson databind, see [github.com/FasterXML/jackson-databind](https://github.com/FasterXML/jackson-databind)
+> for more information on Jackson databind, see [github.com/FasterXML/jackson-databind](https://github.com/FasterXML/jackson-databind)
+
+### Immutable Trees
+
+You can make a tree immutable using Tree.immutable(). 
+
+```java
+Tree<String> myTree = ...;
+Tree<String> immutableTree = myTree.immutable();
+
+immutableTree.addChild(immutableTree.root(), "newChild"); // throws Unsupported Operation Exception
+immutableTree.removeChild(immutableTree.root(), "firstChild"); // throws Unsupported Operation Exception
+```
