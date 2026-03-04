@@ -7,7 +7,7 @@ I created this library because I was having trouble finding other libraries that
 
 ## Compatibility
 
-- Java 11+ (previous version untested)
+- Java 11+ (previous versions untested)
 - Jackson Databind 3.x.x
 
 ## Usage
