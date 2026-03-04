@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="SimpleTrees:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/SimpleTrees_jar</output-path>
+    <root id="archive" name="SimpleTrees.jar">
+      <element id="module-output" name="SimpleTrees" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/jetbrains/annotations/24.0.0/annotations-24.0.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/fasterxml/jackson/core/jackson-annotations/2.21/jackson-annotations-2.21.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/tools/jackson/core/jackson-core/3.1.0/jackson-core-3.1.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/tools/jackson/core/jackson-databind/3.1.0/jackson-databind-3.1.0.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
