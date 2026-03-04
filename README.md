@@ -12,7 +12,7 @@ I created this library because I was having trouble finding other libraries that
 
 ## Installation
 
-To install the project, first go and download the [latest release](https://github.com/ThDudk/SimpleTrees/releases).
+To install the project, first go and download the [latest release](https://github.com/ThDudk/SimpleTrees/releases) jar file.
 
 ### Option 1: Using a libs directory
 
