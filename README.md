@@ -22,13 +22,13 @@ To generate a libs directory, open your terminal and cd to your project director
 From there, use the following command to create a project level Maven repository: (replacing the version where necessary)
 
 ```terminaloutput
-mvn install:install-file 
-    -Dfile=simple-trees-v1.0.0.jar
-    -DgroupId=io.github.thdudk
-    -DartifactId=simple-trees
-    -Dversion=1.0.0
-    -Dpackaging=jar
-    -DlocalRepositoryPath=libs
+mvn install:install-file\
+    -Dfile=simple-trees-v1.0.0.jar\
+    -DgroupId=io.github.thdudk\
+    -DartifactId=simple-trees\
+    -Dversion=1.0.0\
+    -Dpackaging=jar\
+    -DlocalRepositoryPath=libs\
     -DcreateChecksum=true
 ```
 
@@ -64,11 +64,11 @@ If you don't have Maven installed, you can download it using `brew install maven
 Once Maven is installed, you can run the following command to add simple-trees to your local repository.
 
 ```terminaloutput
-mvn install:install-file 
-    -Dfile=simple-trees-v1.0.0.jar
-    -DgroupId=io.github.thdudk
-    -DartifactId=simple-trees
-    -Dversion=1.0.0
+mvn install:install-file\
+    -Dfile=simple-trees-v1.0.0.jar\
+    -DgroupId=io.github.thdudk\
+    -DartifactId=simple-trees\
+    -Dversion=1.0.0\
     -Dpackaging=jar
 ```
 
