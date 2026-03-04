@@ -71,7 +71,7 @@ Tree<MathSymbol> exprTree = expressionTree.stream()
 
 ### Serialization with Jackson
 
-Jackson serialization is already all setup. To serialize trees, simply call object mapper.
+Jackson serialization is already all setup. To serialize trees, simply use `ObjectMapper`.
 
 ```java
 // writes the tree as a json string
