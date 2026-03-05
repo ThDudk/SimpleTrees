@@ -197,8 +197,7 @@ public interface Tree<T> extends Iterable<Tree.Node<T>> {
 
             int depth = depth(curr);
 
-            if(depth > 0)
-                builder.repeat("│  ", depth);
+            builder.append("│  ".repeat(Math.max(0, depth)));
 
             builder.append("├─ ").append(curr.data());
             if(iterator.hasNext()) builder.append("\n");

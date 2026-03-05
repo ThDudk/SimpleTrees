@@ -7,84 +7,31 @@ I created this library because I was having trouble finding other libraries that
 
 ## Compatibility
 
-- Java 11+ (previous versions untested)
+- Java 17+
 - [Jackson Databind](https://github.com/FasterXML/jackson-databind) v3+
 
 ## Installation
 
-To install the project, first go and download the [latest release](https://github.com/ThDudk/SimpleTrees/releases) jar file.
-
-### Option 1: Using a libs directory
-
-To generate a libs directory, open your terminal and cd to your project directory 
-> If you're using IntelliJ, you can use the built-in `View/Tool Windows/Terminal`. Just make sure the simple-trees jar is inside your project directory.
-
-From there, use the following command to create a project level Maven repository: (replacing the version where necessary)
-
-```terminaloutput
-mvn install:install-file\
-    -Dfile=simple-trees-v1.0.0.jar\
-    -DgroupId=io.github.thdudk\
-    -DartifactId=simple-trees\
-    -Dversion=1.0.0\
-    -Dpackaging=jar\
-    -DlocalRepositoryPath=libs\
-    -DcreateChecksum=true
-```
-
-Then register the Maven repository and add simple-trees as a dependency.
+Since the project is registered with Github Packages, you can simply pull from github in your pom.xml:
 
 ```xml
 <repositories>
+    <!-- ... -->
     <repository>
-        <id>in-project</id>
-        <name>In Project Repo</name>
-        <url>file://${project.basedir}/libs</url>
+        <id>github</id>
+        <url>https://maven.pkg.github.com/thdudk/simple-trees</url>
     </repository>
 </repositories>
 
 <dependencies>
+    <!-- ... -->
     <dependency>
         <groupId>io.github.thdudk</groupId>
         <artifactId>simple-trees</artifactId>
-        <!-- replace with your version -->
-        <version>1.0.0</version> 
+        <version>1.0.0</version>
     </dependency>
 </dependencies>
 ```
-
-> **NOTE:** This option ensures that anyone cloning your repository will also have access to simple-trees.
-
-### Option 2: Registering with the Local Maven Repository
-
-To register to your device's local maven repository, first ensure you have Maven installed
-
-If you don't have Maven installed, you can download it using `brew install maven`, or directly from [maven.apache.org/download.cgi](https://maven.apache.org/download.cgi).
-
-Once Maven is installed, you can run the following command to add simple-trees to your local repository.
-
-```terminaloutput
-mvn install:install-file\
-    -Dfile=simple-trees-v1.0.0.jar\
-    -DgroupId=io.github.thdudk\
-    -DartifactId=simple-trees\
-    -Dversion=1.0.0\
-    -Dpackaging=jar
-```
-
-Then, you can add simple-trees like any other dependency in your pom.xml
-
-```xml
-<dependency>
-    <groupId>io.github.thdudk</groupId>
-    <artifactId>simple-trees</artifactId>
-    <version>1.0.0</version>
-</dependency>
-```
-
-> **Note:** Option 2 requires that every device using this project MUST have the simple-trees jar registered, which can be unrealistic. 
-> 
-> Option 1 is preferred in most cases. 
 
 ## Usage
 

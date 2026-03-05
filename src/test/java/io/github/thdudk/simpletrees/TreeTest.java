@@ -115,8 +115,8 @@ class TreeTest {
     void depth(Tree<Integer> tree) {
         assertAll(
             () -> assertEquals(0, tree.depth(tree.root())),
-            () -> assertEquals(1, tree.depth(tree.root().children().getFirst())),
-            () -> assertEquals(2, tree.depth(tree.root().children().getFirst().children().getFirst()))
+            () -> assertEquals(1, tree.depth(tree.root().children().get(0))),
+            () -> assertEquals(2, tree.depth(tree.root().children().get(0).children().get(0)))
         );
     }
 

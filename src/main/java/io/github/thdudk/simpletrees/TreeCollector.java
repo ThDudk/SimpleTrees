@@ -52,7 +52,7 @@ public class TreeCollector<T> implements Collector<Tree.StreamEdge<T>, List<Tree
             if(possibleRoots.isEmpty()) throw new RuntimeException("Found no roots.");
             if(possibleRoots.size() > 1) throw new RuntimeException("Found more than 1 root.");
 
-            var root = possibleRoots.getFirst();
+            var root = possibleRoots.get(0);
             Tree<T> tree = Tree.ofRoot(root.data());
 
             var adjList = edges.stream()
@@ -63,8 +63,8 @@ public class TreeCollector<T> implements Collector<Tree.StreamEdge<T>, List<Tree
                     mapping(ParentChildPair::child, toList()))
                 );
 
-            adjList.replaceAll((_, v) ->
-                v.stream().sorted(Comparator.comparingInt(Tree.StreamNode::id)).toList()
+            adjList.replaceAll((node, children) ->
+                children.stream().sorted(Comparator.comparingInt(Tree.StreamNode::id)).toList()
             );
 
             Map<Tree.StreamNode<T>, Tree.Node<T>> nodeMap = new HashMap<>();
