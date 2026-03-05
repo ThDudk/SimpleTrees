@@ -48,6 +48,22 @@ public class AdjListTree<T> implements Tree<T> {
         adjList = new HashMap<>();
         adjList.put(rootNode, new ArrayList<>());
     }
+    public AdjListTree(Tree<T> other) {
+        this(other.root().data());
+
+        DfsTreeIterator<T> iterator = new DfsTreeIterator<>(other);
+        Map<Node<T>, Node<T>> otherToThis = new HashMap<>();
+        otherToThis.put(other.root(), root());
+
+        iterator.next();
+
+        while(iterator.hasNext()) {
+            var curr = iterator.next();
+
+            var thisNode = addChild(otherToThis.get(curr.parent()), curr.data());
+            otherToThis.put(curr, thisNode);
+        }
+    }
 
     private void requireInside(Node<T> node) throws IllegalArgumentException {
         if (node instanceof SimpleNode<T> && adjList.containsKey(node))

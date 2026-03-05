@@ -9,8 +9,7 @@ import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TreeTest {
@@ -19,6 +18,17 @@ class TreeTest {
 
         return List.of(
             mapper.readValue(new File("src/test/resources/perfectBinaryTree.json"), new TypeReference<Tree<Integer>>() {})
+        );
+    }
+    static List<Tree<Integer>> possiblyImmutableBinaryTrees() {
+        return binaryTrees().stream().<Tree<Integer>>mapMulti((tree, consumer) -> {
+            consumer.accept(tree);
+            consumer.accept(new ImmutableAdjListTree<>(tree));
+        }).toList();
+    }
+    static List<Tree<Integer>> integerTrees() {
+        return List.of(
+            new AdjListTree<>(1)
         );
     }
 
@@ -183,6 +193,70 @@ class TreeTest {
         while(iterator.hasNext()) {
             assertEquals(dfsIterator.next(), iterator.next());
         }
+    }
+
+    @ParameterizedTest
+    @MethodSource(value = "integerTrees")
+    void addSubtree(Tree<Integer> tree) {
+        tree.root()
+            .addChild(2).parent()
+            .addChild(3).tree();
+
+        var three = tree.anyNodeWithData(3).orElseThrow();
+
+        Tree<Integer> subtree = Tree.ofRoot(4).root()
+            .addChild(5).parent()
+            .addChild(6)
+                .addChild(7).tree();
+
+        tree.addSubtree(three, subtree);
+
+        Tree<Integer> result = Tree.ofRoot(1).root()
+            .addChild(2).parent()
+            .addChild(3)
+                .addChild(4)
+                    .addChild(5).parent()
+                    .addChild(6)
+                        .addChild(7)
+            .tree();
+
+        assertTrue(treesEqual(result, tree));
+    }
+
+    @ParameterizedTest
+    @MethodSource(value = "integerTrees")
+    void addingSelfAsSubtree(Tree<Integer> tree) {
+        tree.root()
+            .addChild(2).parent()
+            .addChild(3).tree();
+
+        tree.anyNodeWithData(3).orElseThrow()
+            .addSubtree(tree);
+
+        Tree<Integer> result = Tree.ofRoot(1).root()
+            .addChild(2).parent()
+            .addChild(3)
+                .addChild(1)
+                    .addChild(2).parent()
+                    .addChild(3)
+            .tree();
+
+        assertTrue(treesEqual(result, tree));
+    }
+
+    @ParameterizedTest
+    @MethodSource(value = "possiblyImmutableBinaryTrees")
+    void adjListTreeCopy(Tree<Integer> tree) {
+        var copy = new AdjListTree<>(tree);
+
+        assertAll(
+            () -> assertTrue(treesEqual(tree, copy)),
+            () -> {
+                for(var node : tree.nodes()) {
+                    assertNotSame(copy.nodesWithData(node.data()), node);
+                }
+            }
+        );
     }
 
     public <T> boolean treesEqual(Tree<T> first, Tree<T> second) {

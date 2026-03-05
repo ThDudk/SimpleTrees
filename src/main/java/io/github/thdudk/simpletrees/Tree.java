@@ -39,7 +39,7 @@ import java.util.stream.Stream;
 /// @param <T> Type of data contained in `this`
 @JsonSerialize(using = TreeSerializer.class)
 @JsonDeserialize(as = AdjListTree.class)
-public interface Tree<T> extends Iterable<Tree.Node<T>> {
+public interface Tree<T> extends Iterable<Tree.Node<T>>, Cloneable {
     /// Represents a node in a tree. These are a reflection of a tree's nodes and all operations performed on a node are performed on the original tree.
     ///
     /// methods on node should only perform operations through their tree. As such it is not recommended that default operations be overridden under any circumstances.
@@ -72,11 +72,19 @@ public interface Tree<T> extends Iterable<Tree.Node<T>> {
         default Tree<T> subtree() { return tree().subtree(this); }
         /// alias for {@link Tree#depth(Node) tree().depth(this)}
         default int depth() { return tree().depth(this); }
+        /// alias for {@link Tree#addSubtree(Node, Tree) tree().addSubtree(this, subtree)}
+        default void addSubtree(Tree<T> subtree) {
+            tree().addSubtree(this, subtree);
+        }
 
         @Override @NotNull
         default Iterator<Node<T>> iterator() {
             return new DfsTreeIterator<>(this);
         }
+
+        /// Note: Parent tree will not be considered.
+        /// Two nodes will be considered equal if their data and ids are the same, even if they are from different trees.
+        boolean equals(Object other);
     }
     record StreamNode<T>(int id, T data){
         public <N> StreamNode<N> mapData(Function<T, N> mapper) {
@@ -170,6 +178,27 @@ public interface Tree<T> extends Iterable<Tree.Node<T>> {
     ///
     /// @return a copy of `this` with only nodes under (and including) `root`.
     Tree<T> subtree(@NonNull Node<T> root);
+    /// Adds `subtree` to `this` below `parent`.
+    ///
+    /// It is acceptable for `subtree` to be `this`. In this case, a duplicate of `this` will be created, and that will be added.
+    /// @param parent The node to add the subtree under
+    /// @param subtree The subtree to add
+    /// @throws UnsupportedOperationException if `this` is immutable.
+    default void addSubtree(@NonNull Node<T> parent, @NonNull Tree<T> subtree) throws UnsupportedOperationException {
+        if(subtree == this) subtree = subtree.duplicate();
+
+        Map<Node<T>, Node<T>> subtreeToThis = new HashMap<>();
+
+        for(Node<T> node : subtree) {
+            var parentInThis = (node.isRoot())
+                ? parent
+                : subtreeToThis.get(node.parent());
+
+            var nodeInThis = parentInThis.addChild(node.data());
+
+            subtreeToThis.put(node, nodeInThis);
+        }
+    }
 
     /// Creates a Tree with `root`.
     static <T> Tree<T> ofRoot(@NonNull T root) {
@@ -252,6 +281,16 @@ public interface Tree<T> extends Iterable<Tree.Node<T>> {
     /// @see #stream()
     static <T> TreeCollector<T> collector() {
         return new TreeCollector<>();
+    }
+
+    /// Duplicates the structure of `this`. Data in the duplicated tree, however, will point to the same objects as `this`.
+    ///
+    /// It is guaranteed that for any node in `this`, the matching node object in the return value will be different.
+    /// In other words, for any matching pair of nodes (nodeInThis, nodeInResult), nodeInThis != nodeInResult.
+    ///
+    /// @return a clone of `this`.
+    default Tree<T> duplicate() {
+        return new AdjListTree<>(this);
     }
 
     default Tree<T> immutable() {
