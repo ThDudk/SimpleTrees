@@ -28,7 +28,7 @@ Since the project is registered with Github Packages, you can simply pull from g
     <dependency>
         <groupId>io.github.thdudk</groupId>
         <artifactId>simple-trees</artifactId>
-        <version>1.0.0</version>
+        <version>1.1.0</version>
     </dependency>
 </dependencies>
 ```
