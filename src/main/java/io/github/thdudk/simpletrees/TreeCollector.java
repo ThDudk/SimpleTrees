@@ -52,6 +52,8 @@ public class TreeCollector<T> implements Collector<Tree.StreamEdge<T>, List<Tree
             if(possibleRoots.isEmpty()) throw new RuntimeException("Found no roots.");
             if(possibleRoots.size() > 1) throw new RuntimeException("Found more than 1 root.");
 
+            if(edges.size() == 1) return Tree.ofRoot(edges.get(0).child().data());
+
             var root = possibleRoots.get(0);
             Tree<T> tree = Tree.ofRoot(root.data());
 

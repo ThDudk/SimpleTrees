@@ -266,7 +266,7 @@ class TreeTest {
         var secondIterator = second.iterator();
 
         while(firstIterator.hasNext()) {
-            if(firstIterator.next().data() != secondIterator.next().data()) return false;
+            if(!firstIterator.next().data().equals(secondIterator.next().data())) return false;
         }
         return true;
     }

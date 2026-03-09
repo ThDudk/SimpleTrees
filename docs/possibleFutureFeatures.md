@@ -1,0 +1,2 @@
+- Tree.map()
+- Tree.cutChild()
