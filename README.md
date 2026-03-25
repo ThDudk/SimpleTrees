@@ -1,14 +1,16 @@
 # Java Simple Trees
 
 ## Description
-A Java tree library that supports Java streams and Jackson Serialization.
+A Simple Java tree library that supports Jackson Serialization.
 
 I created this library because I was having trouble finding other libraries that met my needs: mapping nodes, and cleanly serializing to JSON with Jackson.
+
+> Note: This library is intended to be used with smaller trees (ideally < 1000 nodes).
 
 ## Compatibility
 
 - Java 17+
-- [Jackson Databind](https://github.com/FasterXML/jackson-databind) v3+
+- [Jackson Databind](https://github.com/FasterXML/jackson-databind) 3.0.0+
 
 ## Installation
 
@@ -28,7 +30,7 @@ Since the project is registered with Github Packages, you can simply pull from g
     <dependency>
         <groupId>io.github.thdudk</groupId>
         <artifactId>simple-trees</artifactId>
-        <version>1.1.0</version>
+        <version>2.0.0</version>
     </dependency>
 </dependencies>
 ```
@@ -83,17 +85,13 @@ for(Tree.Node<String> node : additionNode) {
 // outputs: +, x, y, 
 ```
 
-### Using streams
+### Mapping nodes
 
-Trees can be converted into streams, then transformed back into a tree using `Tree.stream()`. 
+Mapping nodes is simply done using `Tree.map()`
 
-This will create a stream of `StreamEdges', which are simplified data types meant to be manipulated in a stream.
-
-If you wanted to map all nodes in the tree to another type, for example, here's how you would do it:
 ```java
-Tree<MathSymbol> exprTree = expressionTree.stream()
-    .map(edge -> edge.mapNodes(nodeData -> MathSymbol.parseString(nodeData)))
-    .collect(Tree.collector());
+Tree<MathSymbol> exprTree = expressionTree
+    .map(node -> MathSymbol.parseString(node));
 ```
 
 ### Serialization with Jackson

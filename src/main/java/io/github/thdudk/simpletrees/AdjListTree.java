@@ -2,6 +2,7 @@ package io.github.thdudk.simpletrees;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.github.thdudk.simpletrees.exceptions.NodeNotInTreeException;
 import lombok.NonNull;
 import lombok.ToString;
 
@@ -65,15 +66,15 @@ public class AdjListTree<T> implements Tree<T> {
         }
     }
 
-    private void requireInside(Node<T> node) throws IllegalArgumentException {
-        if (node instanceof SimpleNode<T> && adjList.containsKey(node))
+    private void requireInside(Node<?> node) throws NodeNotInTreeException {
+        if (node instanceof SimpleNode<?> && adjList.containsKey(node))
             return;
 
-        throw new IllegalArgumentException("Node not contained in this tree. No such node: " + node);
+        throw new NodeNotInTreeException("Node not contained in this tree. No such node: " + node);
     }
 
     @SafeVarargs
-    private void requireInside(Node<T>... nodes) throws IllegalArgumentException {
+    private void requireInside(Node<T>... nodes) {
         for (var node : nodes) {
             requireInside(node);
         }
@@ -85,7 +86,7 @@ public class AdjListTree<T> implements Tree<T> {
     }
 
     @Override
-    public Node<T> parent(@NonNull Node<T> node) throws IllegalArgumentException {
+    public Node<T> parent(@NonNull Node<T> node) {
         requireInside(node);
 
         for (var entry : adjList.entrySet()) {
@@ -110,22 +111,26 @@ public class AdjListTree<T> implements Tree<T> {
     }
 
     @Override
-    public Node<T> addChild(@NonNull Node<T> parent, @NonNull T data) {
+    public Node<T> addChild(@NonNull Node<T> parent, @NonNull T data, int childIdx) {
         requireInside(parent);
+
+        if(childIdx < 0 || childIdx > adjList.get(parent).size())
+            throw new IndexOutOfBoundsException(childIdx);
 
         SimpleNode<T> node = new SimpleNode<>(this, data, Math.addExact(lastNodeId, 1));
         lastNodeId += 1;
         adjList.put(node, new ArrayList<>());
-        adjList.get(parent).add(node);
+        adjList.get(parent).add(childIdx, node);
         return node;
     }
 
     @Override
-    public void removeChild(@NonNull Node<T> parent, @NonNull Node<T> child) {
+    public Tree<T> removeChild(@NonNull Node<T> parent, @NonNull Node<T> child) {
         requireInside(parent, child);
         if (!hasChild(parent, child))
             throw new IllegalArgumentException("parent: " + parent + ", has no such child: " + child);
 
+        var subtree = child.subtree();
         Deque<Node<T>> childrenToRemove = new LinkedList<>();
         childrenToRemove.add(child);
 
@@ -136,6 +141,10 @@ public class AdjListTree<T> implements Tree<T> {
 
             adjList.get(toRemove.parent()).remove(child);
         }
+
+        adjList.remove(child);
+
+        return subtree;
     }
 
     @Override
@@ -144,7 +153,7 @@ public class AdjListTree<T> implements Tree<T> {
     }
 
     @Override
-    public Tree<T> subtree(@NonNull Node<T> subtreeRoot) throws IllegalArgumentException {
+    public Tree<T> subtree(@NonNull Node<T> subtreeRoot) throws NodeNotInTreeException {
         requireInside(subtreeRoot);
 
         AdjListTree<T> subtree = new AdjListTree<>(subtreeRoot.data());
@@ -163,6 +172,16 @@ public class AdjListTree<T> implements Tree<T> {
         }
 
         return subtree;
+    }
+
+    @Override
+    public boolean equalNodes(Node<?> node, Node<?> other) {
+        if(!(node instanceof SimpleNode<?> nodeCast)) return false;
+        if(!(other instanceof SimpleNode<?> otherCast)) return false;
+
+        if(node.tree() != this || other.tree() != this) return false;
+
+        return nodeCast.id() == otherCast.id();
     }
 
     @Override

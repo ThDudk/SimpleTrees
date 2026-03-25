@@ -18,18 +18,19 @@ public final class ImmutableAdjListTree<T> extends AdjListTree<T>{
         while(iterator.hasNext()) {
             var curr = iterator.next();
 
-            var thisNode = super.addChild(otherToThis.get(curr.parent()), curr.data());
+            Node<T> parent = otherToThis.get(curr.parent());
+            var thisNode = super.addChild(parent, curr.data(), parent.childCount());
             otherToThis.put(curr, thisNode);
         }
     }
 
     @Override
-    public Node<T> addChild(@NonNull Node<T> parent, @NonNull T data) {
+    public Node<T> addChild(@NonNull Node<T> parent, @NonNull T data, int childIdx) {
         throw new UnsupportedOperationException("Cannot modify immutable tree");
     }
 
     @Override
-    public void removeChild(@NonNull Node<T> parent, @NonNull Node<T> child) {
+    public Tree<T> removeChild(@NonNull Node<T> parent, @NonNull Node<T> child) {
         throw new UnsupportedOperationException("Cannot modify immutable tree");
     }
 }

@@ -1,15 +1,14 @@
 package io.github.thdudk.simpletrees;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.github.thdudk.simpletrees.exceptions.NodeNotInTreeException;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import tools.jackson.databind.annotation.JsonDeserialize;
 import tools.jackson.databind.annotation.JsonSerialize;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 /// Represents a tree data structure.
 ///
@@ -44,10 +43,6 @@ public interface Tree<T> extends Iterable<Tree.Node<T>>, Cloneable {
     ///
     /// methods on node should only perform operations through their tree. As such it is not recommended that default operations be overridden under any circumstances.
     interface Node<T> extends Iterable<Node<T>>{
-        /// Integer id of the node. Ids will always be greater for nodes added later.
-        ///
-        /// This means that, for any `node` in `this`, the children of that node will have increasing Ids.
-        int id();
         Tree<T> tree();
         @JsonSerialize T data();
         @JsonSerialize default List<Node<T>> children() {
@@ -64,51 +59,72 @@ public interface Tree<T> extends Iterable<Tree.Node<T>>, Cloneable {
 
         /// alias for {@link Tree#hasChild(Node, Node) tree().hasChild(this, child)}
         default boolean hasChild(Node<T> child) { return tree().hasChild(this, child); }
+        /// alias for {@link Tree#idxOfChild(Node, Node) tree().idxOfChild(this, child)}
+        default int idxOfChild(Node<T> child) {
+            return tree().idxOfChild(this, child);
+        }
+        /// alias for {@link Tree#numChildren(Node) tree().numChildren(this)}
+        default int childCount() {
+            return tree().numChildren(this);
+        }
+        /// alias for {@link Tree#addChild(Node, Object, int) tree().addChild(this, childData, childIdx)}
+        default Node<T> addChild(T childData, int childIdx) { return tree().addChild(this, childData, childIdx); }
         /// alias for {@link Tree#addChild(Node, Object) tree().addChild(this, childData)}
         default Node<T> addChild(T childData) { return tree().addChild(this, childData); }
         /// alias for {@link Tree#removeChild(Node, Node) tree().removeChild(this, child)}
-        default void removeChild(Node<T> child) { tree().removeChild(this, child); }
+        default Tree<T> removeChild(Node<T> child)  { return tree().removeChild(this, child); }
         /// alias for {@link Tree#subtree(Node) tree().subtree(this)}
         default Tree<T> subtree() { return tree().subtree(this); }
         /// alias for {@link Tree#depth(Node) tree().depth(this)}
         default int depth() { return tree().depth(this); }
+        /// alias for {@link Tree#addSubtree(Node, Tree, int) tree().addSubtree(this, subtree, childIdx)}
+        default void addSubtree(Tree<T> subtree, int childIdx) {
+            tree().addSubtree(this, subtree, childIdx);
+        }
         /// alias for {@link Tree#addSubtree(Node, Tree) tree().addSubtree(this, subtree)}
         default void addSubtree(Tree<T> subtree) {
             tree().addSubtree(this, subtree);
         }
+        /// alias for {@link Tree#trim(Node, Node) tree().trim(this, child)}
+        default void trim(Node<T> child) {tree().trim(this, child);}
 
         @Override @NotNull
         default Iterator<Node<T>> iterator() {
             return new DfsTreeIterator<>(this);
         }
-
-        /// Note: Parent tree will not be considered.
-        /// Two nodes will be considered equal if their data and ids are the same, even if they are from different trees.
-        boolean equals(Object other);
-    }
-    record StreamNode<T>(int id, T data){
-        public <N> StreamNode<N> mapData(Function<T, N> mapper) {
-            return new StreamNode<>(id, mapper.apply(data()));
-        }
-
-        static <T> StreamNode<T> of(Node<T> node) {
-            return new StreamNode<>(node.id(), node.data());
-        }
-    }
-    record StreamEdge<T>(Optional<StreamNode<T>> parent, StreamNode<T> child){
-        /// maps the data in `parent` and `child` according to the provided `mapper` function.
-        ///
-        /// @param mapper the mapper function
-        /// @param <N> the new data type
-        public <N> StreamEdge<N> mapNodes(Function<T, N> mapper) {
-            return new StreamEdge<>(
-                parent.map(p -> p.mapData(mapper)),
-                child.mapData(mapper)
-            );
-        }
     }
 
     Collection<Node<T>> nodes();
+    @JsonSerialize Node<T> root();
+    /// @return the parent of `node`, or null if `node` is the root.
+    /// @throws NodeNotInTreeException if `node` is not contained in `this`.
+    /// @see Node#parent()
+    Node<T> parent(@NonNull Node<T> node);
+    /// @return a collection of node's children.
+    /// @throws NodeNotInTreeException if `node` is not contained in `this`.
+    /// @see Node#children()
+    List<Node<T>> children(@NonNull Node<T> node);
+    /// @throws NodeNotInTreeException if either `parent` or `child` are not contained in `this`.
+    boolean hasChild(@NonNull Node<T> parent, @NonNull Node<T> child);
+    /// Adds `data` as a child node to `parent` at index `childIdx`.
+    /// @param childIdx The index to insert `data` (0 <= childIdx < parent.children().size()).
+    /// @throws IndexOutOfBoundsException if `childIdx` is out of bounds.
+    Node<T> addChild(@NonNull Node<T> parent, @NonNull T data, int childIdx) throws IndexOutOfBoundsException;
+    /// Removes `child` from `parent`.
+    ///
+    /// @return the removed subtree (with child as it's root)
+    /// @throws NodeNotInTreeException if either `parent` or `child` are not contained in `this`.
+    /// @throws IllegalArgumentException if `child` is not a child of `parent`.
+    Tree<T> removeChild(@NonNull Node<T> parent, @NonNull Node<T> child) throws IllegalArgumentException;
+    /// Two nodes are considered equal if they have the same data and position in the tree.
+    ///
+    /// This method requires that both `node` and `other` are contained in `this`.
+    ///
+    /// @return true if node and other are equal.
+    /// @throws NodeNotInTreeException if either `node` or `other` are not contained in `this`.
+    boolean equalNodes(Node<?> node, Node<?> other);
+
+
     /// There is no guarantee which `node` will be returned.
     /// Additionally, there is no guarantee that the result will be consistent.
     ///
@@ -125,26 +141,30 @@ public interface Tree<T> extends Iterable<Tree.Node<T>>, Cloneable {
     default Collection<Node<T>> nodesWithData(@NonNull T data) {
         return nodes().stream().filter(n -> n.data().equals(data)).toList();
     }
-
-    @JsonSerialize Node<T> root();
-    /// @return the parent of `node`, or null if `node` is the root.
-    /// @throws IllegalArgumentException if `node` is not contained in `this`.
-    /// @see Node#parent()
-    @Nullable
-    Node<T> parent(@NonNull Node<T> node) throws IllegalArgumentException;
-    /// @return a collection of node's children.
-    /// @throws IllegalArgumentException if `node` is not contained in `this`.
-    /// @see Node#children()
-    List<Node<T>> children(@NonNull Node<T> node) throws IllegalArgumentException;
-    /// @throws IllegalArgumentException if either `parent` or `child` are not contained in `this`.
-    boolean hasChild(@NonNull Node<T> parent, @NonNull Node<T> child) throws IllegalArgumentException;
-    /// Adds `data` as a child node to `parent`.
-    /// @throws IllegalArgumentException if `parent` is not contained in `this`
-    Node<T> addChild(@NonNull Node<T> parent,@NonNull T data) throws IllegalArgumentException;
-    /// Removes `child` from `parent`.
+    /// # Example
+    /// ```
+    /// ├─ 1
+    /// │  ├─ 2
+    /// │  ├─ 8
     ///
-    /// @throws IllegalArgumentException if either `parent` or `child` are not contained in `this`.
-    void removeChild(@NonNull Node<T> parent, @NonNull Node<T> child) throws IllegalArgumentException;
+    /// 1.idxOfChild(2) // returns 0
+    /// 1.idxOfChild(8) // returns 1
+    /// ```
+    ///
+    /// @return the index of `child` in its parent's children.
+    /// @throws NodeNotInTreeException if `child` is not contained in `this`
+    /// @throws IllegalArgumentException if `child` is not a child of `parent`.
+    default int idxOfChild(@NonNull Node<T> parent, @NonNull Node<T> child) {
+        if(!parent.hasChild(child))
+            throw new IllegalArgumentException("Expected child to be a child of parent");
+
+        return children(parent(child)).indexOf(child);
+    }
+    /// @return the number of children under `node`.
+    /// @throws NodeNotInTreeException if node is not contained in this
+    default int numChildren(@NonNull Node<T> node) {
+        return node.children().size();
+    }
     /// # Example
     /// ```
     /// ├─ 1
@@ -156,8 +176,8 @@ public interface Tree<T> extends Iterable<Tree.Node<T>>, Cloneable {
     /// - the depth of nodes "2" and "8", are 1.
     ///
     /// @return The number of nodes above `node`.
-    /// @throws IllegalArgumentException if node is not contained in this
-    default int depth(@NonNull Node<T> node) throws IllegalArgumentException {
+    /// @throws NodeNotInTreeException if node is not contained in this
+    default int depth(@NonNull Node<T> node) {
         int numParents = -1;
         Node<T> curr = node;
 
@@ -168,36 +188,134 @@ public interface Tree<T> extends Iterable<Tree.Node<T>>, Cloneable {
 
         return numParents;
     }
-
     /// @return true if `node` is the root node, aka `node` has no parent.
+    /// @throws NodeNotInTreeException if `node` is not contained in `this`.
     default boolean isRoot(@NonNull Node<T> node) {return parent(node) == null;}
     /// @return true if `node` is a leaf node, aka `node` has no children.
+    /// @throws NodeNotInTreeException if `node` is not contained in `this`.
     default boolean isLeaf(@NonNull Node<T> node) {return children(node).isEmpty();}
 
-    /// Note: it is not guaranteed that node ids will be preserved.
+    /// Adds `data` as a child node to `parent`.
+    /// @throws NodeNotInTreeException if `parent` is not contained in `this`.
+    default Node<T> addChild(@NonNull Node<T> parent, @NonNull T data) {
+        return addChild(parent, data, parent.childCount());
+    }
+    /// Adds `subtreeToAdd` to `this` below `parent` at index `childIdx`.
     ///
-    /// @return a copy of `this` with only nodes under (and including) `root`.
-    Tree<T> subtree(@NonNull Node<T> root);
-    /// Adds `subtree` to `this` below `parent`.
-    ///
-    /// It is acceptable for `subtree` to be `this`. In this case, a duplicate of `this` will be created, and that will be added.
-    /// @param parent The node to add the subtree under
-    /// @param subtree The subtree to add
+    /// It is acceptable for `subtreeToAdd` to be `this`. In this case, a duplicate of `this` will be created, and that will be added instead.
+    /// @param parent The node to add the subtreeToAdd under
+    /// @throws NodeNotInTreeException if `parent` is not contained in `this`.
+    /// @throws IndexOutOfBoundsException if `childIdx` is out of bounds for parent. (0 <= childIdx < parent.childCount())
     /// @throws UnsupportedOperationException if `this` is immutable.
-    default void addSubtree(@NonNull Node<T> parent, @NonNull Tree<T> subtree) throws UnsupportedOperationException {
-        if(subtree == this) subtree = subtree.duplicate();
+    default void addSubtree(@NonNull Node<T> parent, @NonNull Tree<T> subtreeToAdd, int childIdx) {
+        if(subtreeToAdd == this) subtreeToAdd = subtreeToAdd.duplicate();
 
         Map<Node<T>, Node<T>> subtreeToThis = new HashMap<>();
 
-        for(Node<T> node : subtree) {
+        for(Node<T> node : subtreeToAdd) {
             var parentInThis = (node.isRoot())
                 ? parent
                 : subtreeToThis.get(node.parent());
 
-            var nodeInThis = parentInThis.addChild(node.data());
+            var nodeInThis = (node.isRoot())
+                ? parentInThis.addChild(node.data(), childIdx)
+                : parentInThis.addChild(node.data());
 
             subtreeToThis.put(node, nodeInThis);
         }
+    }
+    /// Adds `subtreeToAdd` to `this` below `parent`.
+    ///
+    /// It is acceptable for `subtreeToAdd` to be `this`. In this case, a duplicate of `this` will be created, and that will be added instead.
+    /// @param parent The node to add the subtreeToAdd under
+    /// @throws NodeNotInTreeException if `parent` is not contained in `this`.
+    /// @throws UnsupportedOperationException if `this` is immutable.
+    default void addSubtree(@NonNull Node<T> parent, @NonNull Tree<T> subtreeToAdd) {
+        addSubtree(parent, subtreeToAdd, parent.childCount());
+    }
+    /// Removes `childToTrim` from `parent` and adds its children to its parent in same spot.
+    ///
+    /// If `childToTrim` is a leaf childToTrim, it is simply removed.
+    ///
+    /// NOTE: `childToTrim` cannot be the tree's root. In this case, use Tree.subtree() instead.
+    ///
+    /// # Example
+    ///
+    /// Before:
+    /// ```
+    /// ├─ 4
+    /// │  ├─ 2
+    /// │  │  ├─ 1
+    /// │  │  ├─ 3
+    /// │  ├─ 6
+    /// │  │  ├─ 5
+    /// │  │  ├─ 7
+    /// ```
+    /// After trim(2)
+    /// ```
+    /// ├─ 4
+    /// │  ├─ 1
+    /// │  ├─ 3
+    /// │  ├─ 6
+    /// │  │  ├─ 5
+    /// │  │  ├─ 7
+    /// ```
+    ///
+    /// @throws NodeNotInTreeException if `childToTrim` is not contained in `this`.
+    /// @throws IllegalArgumentException if `childToTrim` is not a child of `parent`.
+    default void trim(@NonNull Node<T> parent, @NonNull Node<T> childToTrim) throws IllegalArgumentException {
+        if(!parent.hasChild(childToTrim))
+            throw new IllegalArgumentException("Expected childToTrim to be a child of parent.");
+
+        var nodeIdx = parent.idxOfChild(childToTrim);
+
+        System.out.println(nodeIdx);
+
+        var subtree = parent.removeChild(childToTrim);
+        for(var child : subtree.root().children()) {
+            parent.addSubtree(child.subtree(), nodeIdx + subtree.root().idxOfChild(child));
+        }
+    }
+
+    /// Maps all `nodes` using the given mapper function
+    /// @param <N> The output type
+    /// @param mapper The mapping function
+    /// @return the mapped tree
+    default <N> Tree<N> map(Function<T, N> mapper) {
+        Tree<N> newTree = ofRoot(mapper.apply(root().data()));
+
+        BfsTreeIterator<T> iterator = new BfsTreeIterator<>(this);
+        Map<Node<T>, Node<N>> thisToOther = new HashMap<>();
+        thisToOther.put(root(), newTree.root());
+
+        iterator.next();
+
+        while (iterator.hasNext()) {
+            var curr = iterator.next();
+
+            var newNode = newTree.addChild(thisToOther.get(curr.parent()), mapper.apply(curr.data()));
+            thisToOther.put(curr, newNode);
+        }
+
+        return newTree;
+    }
+    /// Note: it is not guaranteed that node ids will be preserved.
+    ///
+    /// @return a copy of `this` with only nodes under (and including) `root`.
+    /// @throws NodeNotInTreeException if `root` is not contained in `this`.
+    Tree<T> subtree(@NonNull Node<T> root);
+    /// Duplicates the structure of `this`. Data in the duplicated tree, however, will point to the same objects as `this`.
+    ///
+    /// It is guaranteed that for any node in `this`, the matching node object in the return value will be different.
+    /// In other words, for any matching pair of nodes (nodeInThis, nodeInResult), nodeInThis != nodeInResult.
+    ///
+    /// @return a clone of `this`.
+    default Tree<T> duplicate() {
+        return new AdjListTree<>(this);
+    }
+    /// @return an immutable version of `this`.
+    default Tree<T> immutable() {
+        return new ImmutableAdjListTree<>(this);
     }
 
     /// Creates a Tree with `root`.
@@ -233,38 +351,6 @@ public interface Tree<T> extends Iterable<Tree.Node<T>>, Cloneable {
         }
         return builder.toString();
     }
-    /// Both classes {@link StreamEdge} and {@link StreamNode} are intended to be simple POJOs, which can be used in a stream.
-    ///
-    /// Note: The root node will be given a StreamEdge with no parent.
-    /// This preserves the root node in cases where there is only 1 node.
-    ///
-    /// {@link StreamEdge#mapNodes(Function mapper)} preserves this empty parent.
-    ///
-    /// # Examples
-    /// ```
-    /// Tree<Integer> intTree = ...;
-    ///
-    /// Tree<String> strTree = intTree.stream()
-    ///     .map(edge -> edge.mapNodes(Object::toString))
-    ///     .collect(Tree.collector());
-    /// ```
-    ///
-    /// @return a stream of `StreamEdges`
-    default Stream<StreamEdge<T>> stream() {
-        List<StreamEdge<T>> edges = new ArrayList<>();
-
-        for(Node<T> node : this) {
-            Node<T> parent = node.parent();
-            edges.add(
-                new StreamEdge<>(
-                    (parent == null) ? Optional.empty() : Optional.of(StreamNode.of(parent)),
-                    StreamNode.of(node)
-                )
-            );
-        }
-
-        return edges.stream();
-    }
     /// The returned iterator will be of type {@link DfsTreeIterator}. This means nodes will be traversed depth first.
     ///
     /// If you want to create an iterator that traverses breadth first, see {@link BfsTreeIterator}
@@ -275,25 +361,5 @@ public interface Tree<T> extends Iterable<Tree.Node<T>>, Cloneable {
     @Override @NotNull
     default Iterator<Node<T>> iterator() {
         return new DfsTreeIterator<>(this);
-    }
-    /// @return a collector used to convert a stream of {@link StreamEdge}s into a Tree.
-    /// @see TreeCollector
-    /// @see #stream()
-    static <T> TreeCollector<T> collector() {
-        return new TreeCollector<>();
-    }
-
-    /// Duplicates the structure of `this`. Data in the duplicated tree, however, will point to the same objects as `this`.
-    ///
-    /// It is guaranteed that for any node in `this`, the matching node object in the return value will be different.
-    /// In other words, for any matching pair of nodes (nodeInThis, nodeInResult), nodeInThis != nodeInResult.
-    ///
-    /// @return a clone of `this`.
-    default Tree<T> duplicate() {
-        return new AdjListTree<>(this);
-    }
-
-    default Tree<T> immutable() {
-        return new ImmutableAdjListTree<>(this);
     }
 }

@@ -10,7 +10,7 @@ public record SimpleNode<T>(@NonNull @JsonIgnore Tree<T> tree, @NonNull T data, 
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         SimpleNode<?> that = (SimpleNode<?>) o;
-        return id == that.id && Objects.equals(data, that.data);
+        return tree.equalNodes(this, that);
     }
 
     @Override

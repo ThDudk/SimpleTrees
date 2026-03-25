@@ -18,7 +18,8 @@ class ImmutableAdjListTreeTest {
             () -> assertThrows(UnsupportedOperationException.class, () -> tree.removeChild(tree.anyNodeWithData(4).orElseThrow(), tree.anyNodeWithData(2).orElseThrow())),
             () -> assertThrows(UnsupportedOperationException.class, () -> tree.anyNodeWithData(3).orElseThrow().addChild(2)),
             () -> assertThrows(UnsupportedOperationException.class, () -> tree.anyNodeWithData(4).orElseThrow().removeChild(tree.anyNodeWithData(2).orElseThrow())),
-            () -> assertThrows(UnsupportedOperationException.class, () -> tree.anyNodeWithData(4).orElseThrow().addSubtree(tree))
+            () -> assertThrows(UnsupportedOperationException.class, () -> tree.anyNodeWithData(4).orElseThrow().addSubtree(tree)),
+            () -> assertThrows(UnsupportedOperationException.class, () -> tree.anyNodeWithData(4).orElseThrow().trim(tree.anyNodeWithData(2).orElseThrow()))
         );
     }
 }
